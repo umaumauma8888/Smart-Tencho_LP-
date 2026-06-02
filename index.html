@@ -629,10 +629,13 @@ function toggleFaq(el){
   item.classList.toggle('open');
 }
 
-function submitForm(){
+async function submitForm(){
   const name=document.getElementById('f-name').value.trim();
   const company=document.getElementById('f-company').value.trim();
   const email=document.getElementById('f-email').value.trim();
+  const tel=document.getElementById('f-tel').value.trim();
+  const type=document.getElementById('f-type').value;
+  const staff=document.getElementById('f-staff').value;
   if(!name){alert('お名前を入力してください');return}
   if(!company){alert('店舗名・会社名を入力してください');return}
   if(!email||!email.includes('@')){alert('正しいメールアドレスを入力してください');return}
@@ -641,12 +644,15 @@ function submitForm(){
   btn.disabled=true;
   btn.textContent='送信中...';
 
-  /* デモURL自動送信のシミュレーション（実装時はバックエンドAPI or EmailJS等に差し替え） */
-  setTimeout(()=>{
-    btn.disabled=false;
-    btn.textContent='📩 無料デモを申し込む（デモURLをメール送信）';
+  try{
+    const res=await fetch('/api/submit',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,company,email,tel,type,staff}),
+    });
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||'送信に失敗しました');
     document.getElementById('modal').classList.add('show');
-    /* フォームリセット */
     ['f-name','f-company','f-email','f-tel'].forEach(id=>{
       const el=document.getElementById(id);
       if(el)el.value='';
@@ -655,7 +661,12 @@ function submitForm(){
       const el=document.getElementById(id);
       if(el)el.selectedIndex=0;
     });
-  },1200);
+  }catch(err){
+    alert('送信エラーが発生しました。しばらくしてから再度お試しください。\n'+err.message);
+  }finally{
+    btn.disabled=false;
+    btn.textContent='📩 無料デモを申し込む（デモURLをメール送信）';
+  }
 }
 
 /* モーダル外クリックで閉じる */
